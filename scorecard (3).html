@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VND Scoreboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#0B2C22;
+    --deep-2:#0E362A;
+    --panel:rgba(15,48,38,0.62);
+    --hairline:rgba(201,162,39,0.28);
+    --hairline-strong:rgba(201,162,39,0.55);
+    --gold:#C9A227;
+    --gold-light:#E7C769;
+    --gold-dim:#8C6F2E;
+    --ivory:#F4EEDD;
+    --ivory-dim:#B9C2B4;
+    --shadow: 0 30px 70px rgba(0,0,0,0.55), 0 2px 0 rgba(201,162,39,0.08) inset;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Inter', sans-serif;
+    color:var(--ivory);
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:56px 18px 90px;
+    background:
+      radial-gradient(1100px 620px at 50% -12%, #123526 0%, transparent 60%),
+      radial-gradient(900px 500px at 100% 110%, #0d2a20 0%, transparent 55%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 5px),
+      var(--deep);
+    background-attachment:fixed;
+  }
+
+  .card{
+    width:100%;
+    max-width:800px;
+    background:var(--panel);
+    backdrop-filter:blur(6px);
+    border:1px solid var(--hairline);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    padding:46px 48px 40px;
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:"";
+    position:absolute; inset:8px;
+    border:1px solid var(--hairline);
+    border-radius:9px;
+    pointer-events:none;
+  }
+
+  header{ text-align:center; margin-bottom:34px; position:relative; z-index:1;}
+  .eyebrow{
+    font-family:'Inter', sans-serif;
+    font-size:0.68rem;
+    letter-spacing:0.34em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:14px;
+  }
+  .eyebrow::before, .eyebrow::after{
+    content:"—";
+    color:var(--gold-dim);
+    margin:0 10px;
+  }
+  h1{
+    font-family:'Playfair Display', serif;
+    font-weight:600;
+    font-style:italic;
+    font-size:2.6rem;
+    margin:0 0 8px;
+    color:var(--ivory);
+    letter-spacing:0.01em;
+  }
+  .subtitle{
+    font-size:0.85rem;
+    color:var(--ivory-dim);
+    letter-spacing:0.02em;
+  }
+
+  section{ position:relative; z-index:1; }
+  .hidden{ display:none !important; }
+
+  /* form elements */
+  .field-label{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-size:1.1rem;
+    color:var(--ivory);
+    margin-bottom:12px;
+    display:block;
+    text-align:center;
+  }
+  input[type=number], input[type=text]{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1rem;
+    background:rgba(0,0,0,0.18);
+    border:1px solid var(--hairline);
+    color:var(--ivory);
+    padding:12px 14px;
+    width:100%;
+    border-radius:6px;
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  input::placeholder{ color:rgba(244,238,221,0.35); }
+  input[type=number]:focus, input[type=text]:focus{
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(201,162,39,0.14);
+  }
+  #playerCount{ text-align:center; max-width:220px; margin:0 auto; display:block; }
+
+  .name-rows{ margin-top:22px; display:flex; flex-direction:column; gap:12px; max-width:420px; margin-left:auto; margin-right:auto; }
+  .name-row{ display:flex; align-items:center; gap:12px; }
+  .name-row .tag{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--gold);
+    font-size:0.85rem;
+    width:22px;
+    flex-shrink:0;
+    text-align:right;
+  }
+
+  button{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:0.85rem;
+    letter-spacing:0.04em;
+    cursor:pointer;
+    border-radius:7px;
+    padding:12px 26px;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease, color .15s ease;
+    border:1px solid var(--gold-dim);
+    background:transparent;
+    color:var(--gold-light);
+  }
+  button:hover{ transform:translateY(-1px); border-color:var(--gold); box-shadow:0 8px 22px rgba(201,162,39,0.16); }
+  button:active{ transform:translateY(0); }
+  button#toNames, button#startGame, button#addRound, button#newGame{
+    background:linear-gradient(180deg, var(--gold-light), var(--gold));
+    color:#1B1305;
+    border:1px solid var(--gold-light);
+    font-weight:600;
+  }
+  button#toNames:hover, button#startGame:hover, button#addRound:hover, button#newGame:hover{
+    box-shadow:0 10px 26px rgba(201,162,39,0.35);
+  }
+  button.danger{ border-color:rgba(201,90,60,0.55); color:#E38A6B; }
+  button.danger:hover{ box-shadow:0 8px 22px rgba(201,90,60,0.18); border-color:#E38A6B; }
+
+  .btn-row{ margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .error{
+    color:#E38A6B;
+    font-size:0.78rem;
+    margin-top:12px;
+    text-align:center;
+    min-height:1.2em;
+  }
+
+  hr.divider{
+    border:none;
+    border-top:1px solid var(--hairline);
+    margin:30px 0;
+  }
+
+  /* leaderboard */
+  .leaderboard{ display:flex; flex-direction:column; gap:0; }
+  .lb-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:14px 4px;
+    border-bottom:1px solid var(--hairline);
+    position:relative;
+  }
+  .lb-row:last-child{ border-bottom:none; }
+  .rank-medal{
+    width:38px; height:38px;
+    border-radius:50%;
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Playfair Display', serif;
+    font-weight:700;
+    font-size:1rem;
+    border:1.5px solid var(--gold-dim);
+    color:var(--ivory-dim);
+    background:rgba(0,0,0,0.15);
+  }
+  .lb-row:nth-child(1) .rank-medal{ border-color:var(--gold-light); color:var(--gold-light); box-shadow:0 0 0 3px rgba(231,199,105,0.12); }
+  .lb-row:nth-child(2) .rank-medal{ border-color:#C7CCC6; color:#D7DCD3; }
+  .lb-row:nth-child(3) .rank-medal{ border-color:#B5713C; color:#D19765; }
+  .lb-name{
+    font-family:'Playfair Display', serif;
+    font-size:1.08rem;
+    flex:1;
+    color:var(--ivory);
+  }
+  .lb-total{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:1.15rem;
+    color:var(--gold-light);
+    letter-spacing:0.02em;
+    min-width:56px;
+    text-align:right;
+  }
+  .lb-bar-track{
+    position:absolute; left:0; right:0; bottom:0;
+    height:2px; background:transparent; overflow:hidden;
+  }
+  .lb-bar{ height:100%; background:linear-gradient(90deg, var(--gold-dim), var(--gold-light)); opacity:0.7; }
+
+  /* round entry */
+  .round-title{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-size:1.25rem;
+    margin-bottom:16px;
+    text-align:center;
+    color:var(--ivory);
+  }
+  .round-title span{ color:var(--gold-light); font-style:normal; font-weight:700; }
+  .entry-grid{
+    display:grid;
+    grid-template-columns:1fr 110px;
+    row-gap:12px;
+    column-gap:14px;
+    align-items:center;
+    max-width:460px;
+    margin:0 auto 6px;
+  }
+  .entry-grid .pname{ font-family:'Playfair Display', serif; font-size:1rem; color:var(--ivory-dim); }
+
+  /* history */
+  .history-wrap{ overflow-x:auto; margin:8px 0 4px; }
+  table{ border-collapse:collapse; width:100%; min-width:380px; }
+  th, td{ text-align:center; padding:10px 12px; font-size:0.85rem; white-space:nowrap; font-family:'IBM Plex Mono', monospace; }
+  thead th{
+    font-family:'Inter', sans-serif;
+    font-size:0.68rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+    border-bottom:1px solid var(--hairline-strong);
+  }
+  thead th:first-child{ text-align:left; }
+  tbody td:first-child{ text-align:left; color:var(--ivory-dim); font-family:'Inter', sans-serif; font-size:0.78rem; }
+  tbody tr td{ border-bottom:1px solid var(--hairline); color:var(--ivory); }
+  tfoot td{ font-weight:600; border-top:1px solid var(--hairline-strong); padding-top:14px; color:var(--gold-light); }
+  tfoot td:first-child{ text-align:left; font-family:'Inter', sans-serif; text-transform:uppercase; font-size:0.68rem; letter-spacing:0.12em; color:var(--gold); }
+
+  /* final */
+  .seal-wrap{ display:flex; justify-content:center; margin-bottom:22px; }
+  .seal{
+    width:110px; height:110px;
+    border-radius:50%;
+    border:1.5px solid var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 40%, rgba(201,162,39,0.16), transparent 70%);
+    box-shadow:0 0 0 6px rgba(201,162,39,0.08), 0 0 40px rgba(201,162,39,0.15);
+  }
+  .seal-inner{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-size:0.72rem;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--gold-light);
+    text-align:center;
+    line-height:1.5;
+  }
+  .winner-line{
+    font-family:'Playfair Display', serif;
+    font-size:1.35rem;
+    text-align:center;
+    margin-bottom:26px;
+    color:var(--ivory);
+    line-height:1.5;
+  }
+  .winner-line b{ color:var(--gold-light); font-weight:700; }
+
+  footer{
+    text-align:center;
+    font-size:0.68rem;
+    letter-spacing:0.1em;
+    color:var(--ivory-dim);
+    margin-top:26px;
+    opacity:0.6;
+  }
+  footer .credit{
+    margin-top:10px;
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    color:var(--gold-light);
+    opacity:0.85;
+  }
+
+  @media (max-width:560px){
+    .card{ padding:32px 22px 30px; }
+    h1{ font-size:2rem; }
+    .entry-grid{ grid-template-columns:1fr 90px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <header>
+    <h1>VND Scoreboard</h1>
+    <div class="subtitle" id="headerSub">name your players, tally each round, crown a winner</div>
+  </header>
+
+  <!-- STEP 1: number of players -->
+  <section id="step-count">
+    <label class="field-label" for="playerCount">How many are playing?</label>
+    <input type="number" id="playerCount" min="2" max="12" placeholder="2–12">
+    <div class="btn-row">
+      <button id="toNames">Continue</button>
+    </div>
+    <div class="error" id="countError"></div>
+  </section>
+
+  <!-- STEP 2: player names -->
+  <section id="step-names" class="hidden">
+    <label class="field-label">Name each player</label>
+    <div class="name-rows" id="nameRows"></div>
+    <div class="btn-row">
+      <button class="secondary" id="backToCount">Back</button>
+      <button id="startGame">Begin</button>
+    </div>
+    <div class="error" id="namesError"></div>
+  </section>
+
+  <!-- STEP 3: playing -->
+  <section id="step-game" class="hidden">
+    <div class="leaderboard" id="leaderboard"></div>
+
+    <hr class="divider">
+
+    <div class="round-title">Round <span id="roundNumber">1</span></div>
+    <div class="entry-grid" id="entryGrid"></div>
+    <div class="btn-row">
+      <button id="addRound">Add Round</button>
+      <button class="danger" id="endGame">End Game</button>
+    </div>
+    <div class="error" id="entryError"></div>
+
+    <div class="history-wrap">
+      <table id="historyTable">
+        <thead><tr id="historyHead"></tr></thead>
+        <tbody id="historyBody"></tbody>
+        <tfoot><tr id="historyFoot"></tr></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- STEP 4: final -->
+  <section id="step-final" class="hidden">
+    <div class="seal-wrap">
+      <div class="seal"><div class="seal-inner">Final<br>Tally</div></div>
+    </div>
+    <div class="winner-line" id="winnerLine"></div>
+    <div class="leaderboard" id="finalLeaderboard"></div>
+    <div class="btn-row">
+      <button id="newGame">New Game</button>
+    </div>
+  </section>
+
+  <footer>
+    VND SCOREBOARD · ROUND BY ROUND, HONESTLY KEPT
+    <div class="credit">MADE BY VISHNU N D</div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  let players = [];
+  let rounds = [];
+
+  const $ = id => document.getElementById(id);
+  const romans = ['I','II','III'];
+
+  $('toNames').addEventListener('click', () => {
+    const n = parseInt($('playerCount').value, 10);
+    $('countError').textContent = '';
+    if (!n || n < 2 || n > 12) {
+      $('countError').textContent = 'Enter a number of players between 2 and 12.';
+      return;
+    }
+    buildNameRows(n);
+    $('step-count').classList.add('hidden');
+    $('step-names').classList.remove('hidden');
+  });
+
+  function buildNameRows(n){
+    const wrap = $('nameRows');
+    wrap.innerHTML = '';
+    for (let i = 0; i < n; i++){
+      const row = document.createElement('div');
+      row.className = 'name-row';
+      row.innerHTML = `<span class="tag">${i+1}.</span><input type="text" class="playerNameInput" placeholder="Player ${i+1}" maxlength="18">`;
+      wrap.appendChild(row);
+    }
+  }
+
+  $('backToCount').addEventListener('click', () => {
+    $('step-names').classList.add('hidden');
+    $('step-count').classList.remove('hidden');
+  });
+
+  $('startGame').addEventListener('click', () => {
+    const inputs = document.querySelectorAll('.playerNameInput');
+    const names = Array.from(inputs).map((el, i) => el.value.trim() || `Player ${i+1}`);
+    const lower = names.map(n => n.toLowerCase());
+    $('namesError').textContent = '';
+    if (new Set(lower).size !== lower.length){
+      $('namesError').textContent = 'Player names must be unique.';
+      return;
+    }
+    players = names.map(name => ({ name, total: 0 }));
+    rounds = [];
+    $('step-names').classList.add('hidden');
+    $('step-game').classList.remove('hidden');
+    $('headerSub').textContent = `${players.length} players at the table`;
+    buildEntryGrid();
+    renderLeaderboard('leaderboard', players);
+    renderHistory();
+  });
+
+  function buildEntryGrid(){
+    $('roundNumber').textContent = rounds.length + 1;
+    const grid = $('entryGrid');
+    grid.innerHTML = '';
+    players.forEach((p, i) => {
+      const nameEl = document.createElement('div');
+      nameEl.className = 'pname';
+      nameEl.textContent = p.name;
+      const inputEl = document.createElement('input');
+      inputEl.type = 'number';
+      inputEl.className = 'roundPtsInput';
+      inputEl.dataset.idx = i;
+      inputEl.placeholder = '0';
+      grid.appendChild(nameEl);
+      grid.appendChild(inputEl);
+    });
+  }
+
+  $('addRound').addEventListener('click', () => {
+    const inputs = document.querySelectorAll('.roundPtsInput');
+    const pts = Array.from(inputs).map(el => {
+      const v = parseFloat(el.value);
+      return isNaN(v) ? 0 : v;
+    });
+    rounds.push(pts);
+    players.forEach((p, i) => p.total += pts[i]);
+    $('entryError').textContent = '';
+    buildEntryGrid();
+    renderLeaderboard('leaderboard', players);
+    renderHistory();
+  });
+
+  function renderLeaderboard(targetId, list){
+    const sorted = [...list].sort((a,b) => b.total - a.total);
+    const max = Math.max(1, ...sorted.map(p => Math.abs(p.total)));
+    const el = $(targetId);
+    el.innerHTML = '';
+    sorted.forEach((p, i) => {
+      const row = document.createElement('div');
+      row.className = 'lb-row';
+      const pct = Math.max(4, Math.round((Math.abs(p.total) / max) * 100));
+      const medal = i < 3 ? romans[i] : (i+1);
+      row.innerHTML = `
+        <div class="rank-medal">${medal}</div>
+        <div class="lb-name">${escapeHtml(p.name)}</div>
+        <div class="lb-total">${p.total}</div>
+        <div class="lb-bar-track"><div class="lb-bar" style="width:${pct}%"></div></div>
+      `;
+      el.appendChild(row);
+    });
+  }
+
+  function renderHistory(){
+    const head = $('historyHead');
+    const body = $('historyBody');
+    const foot = $('historyFoot');
+    head.innerHTML = '<th>Round</th>' + players.map(p => `<th>${escapeHtml(p.name)}</th>`).join('');
+    body.innerHTML = rounds.map((r, ri) =>
+      `<tr><td>${ri+1}</td>${r.map(v => `<td>${v}</td>`).join('')}</tr>`
+    ).join('');
+    foot.innerHTML = '<td>Total</td>' + players.map(p => `<td>${p.total}</td>`).join('');
+  }
+
+  $('endGame').addEventListener('click', () => {
+    if (rounds.length === 0){
+      $('entryError').textContent = 'Play at least one round before ending the game.';
+      return;
+    }
+    const sorted = [...players].sort((a,b) => b.total - a.total);
+    const winner = sorted[0];
+    const tiedWinners = sorted.filter(p => p.total === winner.total);
+    $('winnerLine').innerHTML = tiedWinners.length > 1
+      ? `It's a tie between <b>${tiedWinners.map(p => escapeHtml(p.name)).join(' & ')}</b> at ${winner.total} points.`
+      : `<b>${escapeHtml(winner.name)}</b> takes the table with ${winner.total} points, across ${rounds.length} round${rounds.length===1?'':'s'}.`;
+    renderLeaderboard('finalLeaderboard', players);
+    $('step-game').classList.add('hidden');
+    $('step-final').classList.remove('hidden');
+  });
+
+  $('newGame').addEventListener('click', () => {
+    players = [];
+    rounds = [];
+    $('playerCount').value = '';
+    $('countError').textContent = '';
+    $('namesError').textContent = '';
+    $('entryError').textContent = '';
+    $('headerSub').textContent = 'name your players, tally each round, crown a winner';
+    $('step-final').classList.add('hidden');
+    $('step-count').classList.remove('hidden');
+  });
+
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, c => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[c]));
+  }
+})();
+</script>
+
+</body>
+</html>
